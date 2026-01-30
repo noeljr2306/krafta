@@ -15,7 +15,7 @@ export default async function ProfessionalDashboardPage() {
     redirect("/auth/login");
   }
 
-  const userId = (session.user as any).id as string;
+  const userId = session.user.id as string;
 
   const technician = await prisma.technician.findUnique({
     where: { userId },

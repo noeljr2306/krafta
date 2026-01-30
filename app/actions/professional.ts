@@ -31,7 +31,7 @@ export async function createProfessionalProfile(
       return { success: false, error: "Unauthorized" };
     }
 
-    const userId = (session.user as any).id as string;
+    const userId = session.user.id as string;
 
     const existing = await prisma.technician.findUnique({
       where: { userId },

@@ -24,7 +24,7 @@ export async function submitReview(
       return { success: false, error: "Unauthorized" };
     }
 
-    const userId = (session.user as any).id as string;
+    const userId = session.user.id as string;
 
     // Validate rating
     if (rating < 1 || rating > 5) {

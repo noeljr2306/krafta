@@ -16,7 +16,7 @@ export default async function CustomerDashboardPage() {
     redirect("/auth/login");
   }
 
-  const userId = (session.user as any).id as string;
+  const userId = session.user.id as string;
 
   const [requests, activeJobs, history] = await prisma.$transaction([
     prisma.booking.findMany({

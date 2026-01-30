@@ -6,9 +6,10 @@ import { useRouter } from "next/navigation";
 
 interface ReviewFormProps {
   bookingId: string;
+  technicianId: string;
 }
 
-export function ReviewForm({ bookingId }: ReviewFormProps) {
+export function ReviewForm({ bookingId, technicianId }: ReviewFormProps) {
   const router = useRouter();
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");

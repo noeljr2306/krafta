@@ -4,11 +4,13 @@ import { useState, FormEvent, useEffect, Suspense } from "react";
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Loader2, Mail, Lock } from "lucide-react";
+import { Loader2, Mail, Lock, ShieldAlert, KeyRound } from "lucide-react";
 
 export function AuthLoginForm() {
   return (
-    <Suspense fallback={<div className="text-slate-500">Loading...</div>}>
+    <Suspense
+      fallback={<div className="text-slate-500 text-center">Loading...</div>}
+    >
       <LoginFormContent />
     </Suspense>
   );
@@ -21,30 +23,35 @@ function LoginFormContent() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [adminCode, setAdminCode] = useState(""); // New state for secret code
+  const [isAdminMode, setIsAdminMode] = useState(false); // Toggle state
+
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (registered) {
-      setSuccessMessage("Account created successfully! Please sign in.");
-    }
-  }, [registered]);
+  const successMessage = registered
+    ? "Account created successfully! Please sign in."
+    : null;
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
     setLoading(true);
 
+    // If Admin Mode is on, we use the adminCode as the password
     const res = await signIn("credentials", {
       redirect: true,
       email,
-      password,
-      callbackUrl,
+      password: isAdminMode ? adminCode : password,
+      callbackUrl: isAdminMode ? "/admin" : callbackUrl, // Redirect admins to dashboard
     });
 
     if (res?.error) {
-      setError("Invalid email or password. Please try again.");
+      setError(
+        isAdminMode
+          ? "Invalid Admin Credentials."
+          : "Invalid email or password.",
+      );
       setLoading(false);
     }
   }
@@ -53,18 +60,26 @@ function LoginFormContent() {
     <div className="w-full max-w-md mx-auto p-8 bg-white rounded-[2rem] shadow-xl shadow-slate-200/60 border border-slate-100">
       <form onSubmit={onSubmit} className="space-y-6">
         <div className="space-y-2 text-center">
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-            Welcome Back
+          <h1 className="text-3xl font-black tracking-tight text-slate-900">
+            {isAdminMode ? "Admin Access" : "Welcome Back"}
           </h1>
           <p className="text-sm text-slate-500">
-            Sign in to manage your KRAFTA bookings
+            {isAdminMode
+              ? "Enter your secure master code"
+              : "Sign in to manage your KRAFTA bookings"}
           </p>
         </div>
+        {successMessage && (
+          <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-100 text-[11px] font-bold text-emerald-600 flex items-center gap-2">
+            <ShieldAlert className="h-4 w-4 text-emerald-500" />
+            {successMessage}
+          </div>
+        )}
 
         <div className="space-y-4">
           {/* Email Input */}
           <div className="space-y-2">
-            <label className="text-sm font-semibold text-slate-700 ml-1">
+            <label className="text-sm font-bold text-slate-700 ml-1">
               Email Address
             </label>
             <div className="relative">
@@ -75,46 +90,54 @@ function LoginFormContent() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
+                placeholder="admin@krafta.com"
               />
             </div>
           </div>
 
-          {/* Password Input */}
-          <div className="space-y-2">
-            <div className="flex justify-between items-center ml-1">
-              <label className="text-sm font-semibold text-slate-700">
+          {/* Conditional Input: Password or Admin Code */}
+          {!isAdminMode ? (
+            <div className="space-y-2 animate-in fade-in slide-in-from-right-2">
+              <label className="text-sm font-bold text-slate-700 ml-1">
                 Password
               </label>
-              <Link
-                href="#"
-                className="text-xs font-medium text-sky-600 hover:underline"
-              >
-                Forgot password?
-              </Link>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <input
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-10 pr-4 py-3 text-sm text-slate-900 outline-none transition-all focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10"
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                />
+              </div>
             </div>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <input
-                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-10 pr-4 py-3 text-sm text-slate-900 outline-none transition-all focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10"
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-              />
+          ) : (
+            <div className="space-y-2 animate-in fade-in slide-in-from-left-2">
+              <label className="text-sm font-bold text-rose-600 ml-1">
+                Secret Admin Code
+              </label>
+              <div className="relative">
+                <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-rose-500" />
+                <input
+                  className="w-full rounded-xl border-2 border-rose-100 bg-rose-50/30 pl-10 pr-4 py-3 text-sm text-slate-900 outline-none transition-all focus:border-rose-500 focus:bg-white"
+                  type="password"
+                  required
+                  autoFocus
+                  value={adminCode}
+                  onChange={(e) => setAdminCode(e.target.value)}
+                  placeholder="Enter Code"
+                />
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Feedback Messages */}
-        {successMessage && (
-          <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-100 text-xs font-medium text-emerald-600 animate-in fade-in slide-in-from-top-1">
-            {successMessage}
-          </div>
-        )}
         {error && (
-          <div className="p-3 rounded-lg bg-rose-50 border border-rose-100 text-xs font-medium text-rose-600 animate-in fade-in slide-in-from-top-1">
+          <div className="p-3 rounded-xl bg-rose-50 border border-rose-100 text-[11px] font-bold text-rose-600 flex items-center gap-2">
+            <ShieldAlert className="h-4 w-4" />
             {error}
           </div>
         )}
@@ -122,24 +145,41 @@ function LoginFormContent() {
         <button
           type="submit"
           disabled={loading}
-          className="relative flex w-full items-center justify-center rounded-xl bg-sky-500 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-sky-500/30 transition-all hover:bg-sky-400 hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
+          className={`relative flex w-full items-center justify-center rounded-xl px-4 py-3.5 text-sm font-black text-white shadow-lg transition-all active:scale-[0.98] disabled:opacity-70 ${
+            isAdminMode
+              ? "bg-slate-900 shadow-slate-200 hover:bg-slate-800"
+              : "bg-sky-500 shadow-sky-500/30 hover:bg-sky-400"
+          }`}
         >
           {loading ? (
             <Loader2 className="h-5 w-5 animate-spin" />
+          ) : isAdminMode ? (
+            "Authorized Login"
           ) : (
             "Sign In to KRAFTA"
           )}
         </button>
 
-        <p className="text-center text-sm text-slate-500">
-          New to KRAFTA?{" "}
-          <Link
-            href="/auth/signup"
-            className="font-bold text-sky-600 hover:text-sky-500"
+        <div className="flex flex-col items-center gap-4">
+          <p className="text-center text-sm text-slate-500">
+            New to KRAFTA?{" "}
+            <Link
+              href="/auth/signup"
+              className="font-bold text-sky-600 hover:text-sky-500"
+            >
+              Create an account
+            </Link>
+          </p>
+
+          {/* THE SECRET TRIGGER */}
+          <button
+            type="button"
+            onClick={() => setIsAdminMode(!isAdminMode)}
+            className="text-[10px] font-bold uppercase tracking-widest text-slate-300 hover:text-slate-400 transition-colors"
           >
-            Create an account
-          </Link>
-        </p>
+            {isAdminMode ? "Return to Customer Login" : "Staff Portal"}
+          </button>
+        </div>
       </form>
     </div>
   );

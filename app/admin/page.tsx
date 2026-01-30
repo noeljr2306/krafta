@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { BookingStatus } from "@prisma/client";
+import { Users, HardHat, Ticket, ArrowUpRight, ShieldCheck, Trash2 } from "lucide-react";
 
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -10,7 +11,7 @@ import { VerifyTechnicianButton } from "@/components/admin/verify-technician-but
 export default async function AdminDashboardPage() {
   const session = await getServerSession(authOptions);
 
-  if (!session?.user || (session.user as any).role !== "ADMIN") {
+  if (!session?.user || session.user.role !== "ADMIN") {
     redirect("/auth/login");
   }
 
@@ -21,9 +22,7 @@ export default async function AdminDashboardPage() {
       prisma.booking.count(),
     ]),
     prisma.technician.findMany({
-      include: {
-        user: true,
-      },
+      include: { user: true },
       orderBy: { createdAt: "desc" },
       take: 8,
     }),
@@ -56,252 +55,148 @@ export default async function AdminDashboardPage() {
   const [totalUsers, totalTechnicians, totalBookings] = stats;
 
   return (
-    <div className="min-h-screen bg-slate-950">
-      <div className="mx-auto max-w-6xl px-4 py-8">
-        <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">
-              Admin dashboard
-            </p>
-            <h1 className="text-2xl font-semibold tracking-tight text-slate-50">
-              Platform overview
+    <div className="min-h-screen bg-slate-50/50 pb-20">
+      <div className="mx-auto max-w-7xl px-4 py-12">
+        
+        {/* Admin Header */}
+        <header className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-rose-500 animate-pulse" />
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                System Administrator
+              </p>
+            </div>
+            <h1 className="text-3xl font-black tracking-tight text-slate-900">
+              Platform Overview
             </h1>
-            <p className="mt-1 text-xs text-slate-400">
-              Monitor users, technicians, and booking activity across KRAFTA.
-            </p>
+          </div>
+          <div className="flex items-center gap-3 rounded-2xl bg-white border border-slate-200 p-2 pr-6 shadow-sm">
+             <div className="h-10 w-10 rounded-xl bg-slate-900 flex items-center justify-center text-white font-bold">
+               {session.user.name?.[0]}
+             </div>
+             <div>
+                <p className="text-xs font-bold text-slate-900">{session.user.name}</p>
+                <p className="text-[10px] font-medium text-slate-400">Master Access</p>
+             </div>
           </div>
         </header>
 
-        <section className="grid gap-4 md:grid-cols-3">
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 text-xs text-slate-200">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
-              Total users
-            </p>
-            <p className="mt-2 text-2xl font-semibold text-slate-50">
-              {totalUsers}
-            </p>
-            <p className="mt-1 text-[11px] text-slate-500">
-              Includes customers, technicians, and admins.
-            </p>
-          </div>
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 text-xs text-slate-200">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
-              Active technicians
-            </p>
-            <p className="mt-2 text-2xl font-semibold text-slate-50">
-              {totalTechnicians}
-            </p>
-            <p className="mt-1 text-[11px] text-slate-500">
-              Technicians with a published profile.
-            </p>
-          </div>
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 text-xs text-slate-200">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
-              All bookings
-            </p>
-            <p className="mt-2 text-2xl font-semibold text-slate-50">
-              {totalBookings}
-            </p>
-            <p className="mt-1 text-[11px] text-slate-500">
-              Total jobs created on the platform.
-            </p>
-          </div>
+        {/* High Level Stats */}
+        <section className="grid gap-6 md:grid-cols-3">
+          <StatCard label="Total Users" value={totalUsers} icon={<Users className="h-5 w-5" />} description="Active accounts" />
+          <StatCard label="Professionals" value={totalTechnicians} icon={<HardHat className="h-5 w-5" />} description="Verified & Pending" />
+          <StatCard label="Total Jobs" value={totalBookings} icon={<Ticket className="h-5 w-5" />} description="Platform volume" />
         </section>
 
-        <section className="mt-8 grid gap-6 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
-          <div className="space-y-4">
-            <h2 className="text-sm font-semibold text-slate-100">
-              Recent bookings
-            </h2>
-            <div className="space-y-3">
-              {recentBookings.length === 0 && (
-                <p className="text-xs text-slate-500">
-                  No bookings yet. Once customers start booking technicians, they will
-                  appear here.
-                </p>
-              )}
-              {recentBookings.map((booking) => (
-                <article
-                  key={booking.id}
-                  className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 text-xs text-slate-200"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
-                      {booking.status}
-                    </p>
-                    <p className="text-[11px] text-slate-500">
-                      {new Date(booking.requestedAt).toLocaleString()}
-                    </p>
-                  </div>
-                  <p className="mt-2 text-sm font-semibold text-slate-50">
-                    {booking.customer.name ?? "Customer"} →{" "}
-                    {booking.technician.user.name}
-                  </p>
-                  <p className="mt-1 line-clamp-2 text-slate-400">
-                    {booking.description}
-                  </p>
-                </article>
-              ))}
-            </div>
+        <div className="mt-12 grid gap-8 lg:grid-cols-[1.4fr_1fr]">
+          
+          {/* Recent Activity Column */}
+          <div className="space-y-8">
+            <section>
+               <h2 className="mb-4 text-sm font-black uppercase tracking-widest text-slate-900">Recent Booking Flow</h2>
+               <div className="grid gap-4">
+                 {recentBookings.map((booking) => (
+                   <article key={booking.id} className="group rounded-3xl border border-slate-100 bg-white p-5 shadow-sm transition-all hover:shadow-md">
+                     <div className="flex items-center justify-between mb-3">
+                       <span className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-600">
+                         {booking.status}
+                       </span>
+                       <span className="text-[10px] font-medium text-slate-400">{new Date(booking.requestedAt).toLocaleDateString()}</span>
+                     </div>
+                     <p className="text-sm font-bold text-slate-900">
+                       {booking.customer.name} <span className="mx-2 text-slate-300">→</span> {booking.technician.user.name}
+                     </p>
+                     <p className="mt-1 text-xs text-slate-500 line-clamp-1">{booking.description}</p>
+                   </article>
+                 ))}
+               </div>
+            </section>
+
+            {/* Transactions Table */}
+            <section>
+              <h2 className="mb-4 text-sm font-black uppercase tracking-widest text-slate-900">Revenue Stream</h2>
+              <div className="overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                    <tr>
+                      <th className="px-6 py-4">Customer</th>
+                      <th className="px-6 py-4">Status</th>
+                      <th className="px-6 py-4 text-right">Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {recentTransactions.map((tx) => (
+                      <tr key={tx.id} className="hover:bg-slate-50/50">
+                        <td className="px-6 py-4 font-bold text-slate-700">{tx.customer.name}</td>
+                        <td className="px-6 py-4">
+                          <span className="inline-flex rounded-lg bg-emerald-50 px-2 py-1 text-[10px] font-bold text-emerald-600">
+                            {tx.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-right font-black text-slate-900">₦{tx.priceQuoted?.toLocaleString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
           </div>
 
-          <aside className="space-y-4">
-            <h2 className="text-sm font-semibold text-slate-100">
-              Technicians (verification view)
-            </h2>
-            <div className="space-y-3 rounded-2xl border border-slate-800 bg-slate-900/70 p-4 text-xs text-slate-200">
-              {technicians.length === 0 && (
-                <p className="text-xs text-slate-500">
-                  No technicians found. Seed data will populate example technicians for
-                  review.
-                </p>
-              )}
-              {technicians.map((tech) => (
-                <div
-                  key={tech.id}
-                  className="flex items-start justify-between gap-3 border-b border-slate-800/60 pb-3 last:border-0 last:pb-0"
-                >
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-slate-50">
-                      {tech.user.name}
-                    </p>
-                    <p className="text-[11px] text-slate-400">
-                      {tech.title} • {tech.city}, {tech.area}
-                    </p>
-                    <p className="mt-1 text-[11px] text-slate-500">
-                      Rating {tech.averageRating.toFixed(1)} ({tech.reviewCount} reviews)
-                    </p>
+          {/* Verification Sidebar */}
+          <aside className="space-y-8">
+            <section>
+              <h2 className="mb-4 text-sm font-black uppercase tracking-widest text-slate-900 text-sky-600">Verification Queue</h2>
+              <div className="rounded-3xl border border-slate-100 bg-white p-2 shadow-sm">
+                {technicians.map((tech) => (
+                  <div key={tech.id} className="flex items-center justify-between p-4 hover:bg-slate-50 rounded-2xl transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-xl bg-sky-50 flex items-center justify-center text-sky-600 font-bold text-xs">
+                        {tech.user.name?.[0]}
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-slate-900">{tech.user.name}</p>
+                        <p className="text-[10px] font-medium text-slate-400">{tech.title}</p>
+                      </div>
+                    </div>
+                    <VerifyTechnicianButton technicianId={tech.id} isVerified={tech.isVerified} />
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-[11px] ${
-                        tech.isVerified
-                          ? "bg-emerald-500/10 text-emerald-300"
-                          : "bg-amber-500/10 text-amber-200"
-                      }`}
-                    >
-                      {tech.isVerified ? "Verified" : "Pending"}
-                    </span>
-                    <VerifyTechnicianButton
-                      technicianId={tech.id}
-                      isVerified={tech.isVerified}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            </section>
+
+            {/* Quick User List */}
+            <section>
+               <h2 className="mb-4 text-sm font-black uppercase tracking-widest text-slate-900">User Control</h2>
+               <div className="overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
+                  {recentUsers.slice(0, 5).map((user) => (
+                    <div key={user.id} className="flex items-center justify-between border-b border-slate-50 p-4 last:border-0">
+                       <div>
+                          <p className="text-xs font-bold text-slate-900">{user.name || 'User'}</p>
+                          <p className="text-[10px] text-slate-400">{user.email}</p>
+                       </div>
+                       <DeleteUserButton userId={user.id} />
+                    </div>
+                  ))}
+               </div>
+            </section>
           </aside>
-        </section>
-
-        <section className="mt-8 space-y-4">
-          <h2 className="text-sm font-semibold text-slate-100">
-            User Management
-          </h2>
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/70 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-slate-400">
-                <thead className="bg-slate-950/50 uppercase tracking-wider text-slate-500">
-                  <tr>
-                    <th className="px-4 py-3 font-medium">Name</th>
-                    <th className="px-4 py-3 font-medium">Email</th>
-                    <th className="px-4 py-3 font-medium">Role</th>
-                    <th className="px-4 py-3 font-medium">Joined</th>
-                    <th className="px-4 py-3 font-medium text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-800/60">
-                  {recentUsers.map((user) => (
-                    <tr key={user.id} className="hover:bg-slate-800/30">
-                      <td className="px-4 py-3 font-medium text-slate-200">
-                        {user.name || "Unnamed"}
-                      </td>
-                      <td className="px-4 py-3">{user.email}</td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                            user.role === "ADMIN"
-                              ? "bg-purple-500/10 text-purple-300"
-                              : user.role === "PROFESSIONAL"
-                              ? "bg-blue-500/10 text-blue-300"
-                              : "bg-slate-500/10 text-slate-400"
-                          }`}
-                        >
-                          {user.role}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        {new Date(user.createdAt).toLocaleDateString()}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <DeleteUserButton userId={user.id} />
-                      </td>
-                    </tr>
-                  ))}
-                  {recentUsers.length === 0 && (
-                    <tr>
-                      <td colSpan={5} className="px-4 py-8 text-center text-slate-500">
-                        No users found.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-        <section className="mt-8 space-y-4">
-          <h2 className="text-sm font-semibold text-slate-100">
-            Recent Transactions
-          </h2>
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/70 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-slate-400">
-                <thead className="bg-slate-950/50 uppercase tracking-wider text-slate-500">
-                  <tr>
-                    <th className="px-4 py-3 font-medium">Date</th>
-                    <th className="px-4 py-3 font-medium">Customer</th>
-                    <th className="px-4 py-3 font-medium">Professional</th>
-                    <th className="px-4 py-3 font-medium">Status</th>
-                    <th className="px-4 py-3 font-medium text-right">Amount</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-800/60">
-                  {recentTransactions.map((tx) => (
-                    <tr key={tx.id} className="hover:bg-slate-800/30">
-                      <td className="px-4 py-3">
-                        {new Date(tx.updatedAt).toLocaleDateString()}
-                      </td>
-                      <td className="px-4 py-3 text-slate-200">
-                        {tx.customer.name || "Unknown"}
-                      </td>
-                      <td className="px-4 py-3 text-slate-200">
-                        {tx.technician.user.name || "Unknown"}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="inline-flex rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-300">
-                          {tx.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-right font-medium text-emerald-400">
-                        ₦{tx.priceQuoted?.toLocaleString()}
-                      </td>
-                    </tr>
-                  ))}
-                  {recentTransactions.length === 0 && (
-                    <tr>
-                      <td colSpan={5} className="px-4 py-8 text-center text-slate-500">
-                        No transactions yet.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </section>
+        </div>
       </div>
     </div>
   );
 }
 
-
+// Reusable Stat Component
+function StatCard({ label, value, icon, description }: { label: string, value: number, icon: React.ReactNode, description: string }) {
+  return (
+    <div className="rounded-[2.5rem] border border-slate-100 bg-white p-8 shadow-sm transition-all hover:shadow-md">
+      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-900 text-white shadow-lg shadow-slate-200">
+        {icon}
+      </div>
+      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{label}</p>
+      <p className="mt-1 text-4xl font-black text-slate-900 tracking-tighter">{value}</p>
+      <p className="mt-2 text-[10px] font-bold text-slate-400">{description}</p>
+    </div>
+  );
+}

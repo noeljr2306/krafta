@@ -19,7 +19,7 @@ export async function verifyTechnician(
 ): Promise<AdminActionResult> {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user || (session.user as any).role !== "ADMIN") {
+    if (!session?.user || session.user.role !== "ADMIN") {
       return { success: false, error: "Unauthorized" };
     }
 
@@ -42,12 +42,12 @@ export async function verifyTechnician(
 export async function deleteUser(userId: string): Promise<AdminActionResult> {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user || (session.user as any).role !== "ADMIN") {
+    if (!session?.user || session.user.role !== "ADMIN") {
       return { success: false, error: "Unauthorized" };
     }
 
     // Prevent deleting self
-    if ((session.user as any).id === userId) {
+    if (session.user.id === userId) {
       return { success: false, error: "Cannot delete your own account" };
     }
 

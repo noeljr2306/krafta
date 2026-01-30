@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, FormEvent, useEffect, Suspense } from "react";
+import { useState, FormEvent, Suspense } from "react";
 import { signup } from "@/app/actions/auth";
 import { Role } from "@prisma/client";
 import Link from "next/link";
@@ -25,6 +25,19 @@ export function AuthSignupForm() {
     </Suspense>
   );
 }
+function getRoleFromParams(searchParams: ReturnType<typeof useSearchParams>) {
+  const roleParam = searchParams.get("role") || searchParams.get("as");
+
+  if (!roleParam) return Role.CUSTOMER;
+
+  const normalized = roleParam.toUpperCase();
+
+  if (normalized === "PROFESSIONAL" || normalized === "TECHNICIAN") {
+    return Role.PROFESSIONAL;
+  }
+
+  return Role.CUSTOMER;
+}
 
 function SignupFormContent() {
   const router = useRouter();
@@ -33,24 +46,11 @@ function SignupFormContent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [role, setRole] = useState<Role>(Role.CUSTOMER);
+  const initialRole = getRoleFromParams(searchParams);
+  const [role, setRole] = useState<Role>(initialRole);
+
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    const roleParam = searchParams.get("role") || searchParams.get("as");
-    if (roleParam) {
-      const normalizedRole = roleParam.toUpperCase();
-      if (
-        normalizedRole === "PROFESSIONAL" ||
-        normalizedRole === "TECHNICIAN"
-      ) {
-        setRole(Role.PROFESSIONAL);
-      } else if (normalizedRole === "CUSTOMER") {
-        setRole(Role.CUSTOMER);
-      }
-    }
-  }, [searchParams]);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -100,7 +100,7 @@ function SignupFormContent() {
               className={`h-6 w-6 ${role === Role.CUSTOMER ? "text-sky-500" : "text-slate-400"}`}
             />
             <span className="text-xs font-bold uppercase tracking-wider">
-              I'm a Customer
+              I&apos;m a Customer
             </span>
           </button>
           <button
@@ -116,7 +116,7 @@ function SignupFormContent() {
               className={`h-6 w-6 ${role === Role.PROFESSIONAL ? "text-sky-500" : "text-slate-400"}`}
             />
             <span className="text-xs font-bold uppercase tracking-wider">
-              I'm a Pro
+              I&apos;m a Pro
             </span>
           </button>
         </div>
