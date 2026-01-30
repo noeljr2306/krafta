@@ -1,217 +1,133 @@
 # KRAFTA
 
-A production-ready full-stack web application that connects users with verified local service providers (electricians, plumbers, AC repair, mechanics, cleaners, etc.).
+A full-stack demo application that connects customers with verified local service providers (electricians, plumbers, cleaners, etc.). This README is tailored to the current codebase.
 
-## Tech Stack
+---
 
-- **Next.js 16** (App Router, TypeScript)
-- **Tailwind CSS** (v4)
-- **shadcn/ui** (UI components)
-- **NextAuth.js** (Credentials + OAuth ready)
-- **PostgreSQL** (Prisma ORM)
-- **Server Actions** + API Routes
+## 🚀 Quick overview
+
+- Framework: **Next.js 16** (App Router, TypeScript)
+- UI: **Tailwind CSS v4** (+ shadcn/ui components)
+- Auth: **next-auth** (Credentials provider + Google OAuth support)
+- ORM: **Prisma** (default: SQLite in development)
+- DB seed + demo data included (see `prisma/seed.ts`)
+
+---
 
 ## Features
 
-### Authentication
-- Email + password (Credentials provider)
-- OAuth-ready (Google setup placeholder)
-- Role-based auth (Customer, Technician, Admin)
-- Protected routes and dashboards
-- Session-based access control
+- Email/password sign-up and sign-in (Credentials provider)
+- Google OAuth (requires `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`)
+- Role-based users: **CUSTOMER**, **PROFESSIONAL**, **ADMIN**
+- Customer: browse technicians, create bookings, submit reviews
+- Technician: manage profile, accept/reject bookings, view jobs
+- Admin: view users, verify technicians, basic platform insights
+- Protected routes via `middleware.ts`
 
-### User Roles
+---
 
-#### Customer
-- Sign up / login
-- Browse service categories
-- View nearby technicians (mock geolocation)
-- View technician profile pages (skills, pricing, rating, availability)
-- Book a service
-- Track booking status (pending, accepted, completed)
-- Submit reviews and ratings
-
-#### Technician
-- Register as a technician
-- Create and update profile (skills, pricing, location)
-- Accept or decline bookings
-- Set pricing and schedule
-- View job history
-- See customer reviews
-
-#### Admin
-- View all users and technicians
-- Approve / verify technicians
-- View bookings and disputes
-- Simple analytics (total users, bookings, active technicians)
-
-## Getting Started
+## Local development (Windows / macOS / Linux) ✅
 
 ### Prerequisites
 
-- Node.js 18+ 
-- PostgreSQL database (or Supabase account - recommended)
-- npm or yarn
+- Node.js 18+ (recommended)
+- npm (or yarn)
 
-### Installation
+### Install & run
 
-1. Clone the repository:
+1. Clone and install:
+
 ```bash
 git clone <repository-url>
 cd krafta
-```
-
-2. Install dependencies:
-```bash
 npm install
 ```
 
-3. Set up environment variables:
+2. Copy example env and update values:
 
-**For Supabase (Recommended):**
-- See [SUPABASE_SETUP.md](./SUPABASE_SETUP.md) for detailed instructions
-- Get connection string from: Supabase Dashboard → Settings → Database
-- Format: `postgresql://postgres:PASSWORD@db.xxxxx.supabase.co:5432/postgres?sslmode=require`
-
-**For Local PostgreSQL:**
 ```bash
-cp .env.example .env
+copy .env.example .env   # Windows (PowerShell/CMD)
+# or
+cp .env.example .env     # macOS / Linux
 ```
 
-Edit `.env`:
-```
-DATABASE_URL="postgresql://user:password@localhost:5432/krafta"
-NEXTAUTH_SECRET="your-secret-key-here"
-NEXTAUTH_URL="http://localhost:3000"
-```
+Important env variables used by the project:
 
-4. Set up the database:
+- `DATABASE_URL` — defaults to a local SQLite file (`file:./dev.db`) in this repo
+- `NEXTAUTH_SECRET` — set a long random string for production
+- `NEXTAUTH_URL` — e.g. `http://localhost:3000`
+- `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` — optional for OAuth
+
+3. Generate Prisma client, run migrations and seed the DB:
+
 ```bash
 npx prisma generate
 npx prisma migrate dev --name init
-npx prisma db seed
+npm run db:seed
 ```
 
-5. Run the development server:
+4. Start dev server:
+
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open http://localhost:3000
 
-## Demo Accounts
+---
 
-After seeding, you can use these demo accounts:
+## Notes about the database and seeding 🔧
 
-- **Admin**: `admin@krafta.local` (password set in seed script)
-- **Customer**: `customer@krafta.local` (password set in seed script)
-- **Technician**: `maria@krafta.local` (password set in seed script)
+- This project is configured to use **SQLite** by default (see `prisma/schema.prisma`).
+  - For local development this is the simplest option: `DATABASE_URL="file:./dev.db"`.
+  - If you prefer PostgreSQL/Supabase, set `DATABASE_URL` to your Postgres connection string and run migrations.
 
-Note: Passwords need to be set manually in the database or via the signup flow.
+- The seed script (`prisma/seed.ts`) creates demo users, technicians, bookings and reviews. The seeded users do not include plaintext passwords or hashed passwords by default. Use the app's signup flow to create password-based accounts, or update `hashedPassword` manually for test accounts.
 
-## Project Structure
+- A development-only default admin login is implemented in the credentials provider for convenience (in `lib/auth.ts`):
+  - Email: `admin@krafta.com`
+  - Password: `krafta2026`
 
-```
-krafta/
-├── app/
-│   ├── actions/          # Server actions
-│   │   ├── auth.ts       # Authentication actions
-│   │   ├── booking.ts    # Booking management
-│   │   ├── review.ts     # Review submission
-│   │   └── admin.ts      # Admin actions
-│   ├── api/              # API routes
-│   │   └── auth/         # NextAuth routes
-│   ├── auth/             # Auth pages
-│   │   ├── login/
-│   │   └── signup/
-│   ├── customer/         # Customer dashboard & pages
-│   ├── technician/       # Technician dashboard
-│   ├── admin/            # Admin dashboard
-│   └── page.tsx          # Landing page
-├── components/
-│   ├── auth/             # Auth components
-│   ├── booking/          # Booking components
-│   ├── review/           # Review components
-│   ├── admin/            # Admin components
-│   └── layout/           # Layout components
-├── lib/
-│   ├── auth.ts           # NextAuth configuration
-│   └── prisma.ts         # Prisma client
-├── prisma/
-│   ├── schema.prisma     # Database schema
-│   └── seed.ts           # Seed script
-└── middleware.ts         # Route protection
-```
+---
 
-## Key Features Implemented
+## Authentication details
 
-✅ **Authentication & Authorization**
-- NextAuth with credentials provider
-- Role-based access control
-- Protected routes via middleware
-- Session management
+- Uses `@next-auth/prisma-adapter` + `next-auth`.
+- Credentials provider uses `bcryptjs` to compare passwords for users that have a `hashedPassword` value.
+- Google OAuth provider is configured but requires `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` environment variables to work.
 
-✅ **Customer Features**
-- Browse technicians
-- View technician profiles
-- Create booking requests
-- Track booking status
-- Submit reviews
+---
 
-✅ **Technician Features**
-- View incoming bookings
-- Accept/reject bookings
-- Set pricing and schedule
-- Mark jobs as completed
-- View profile stats
+## Useful scripts
 
-✅ **Admin Features**
-- Platform analytics
-- Technician verification
-- View all bookings
-- User management
+- `npm run dev` — start dev server
+- `npm run build` — production build
+- `npm start` — run production server
+- `npm run lint` — run ESLint
+- `npm run prisma:generate` — generate Prisma client
+- `npm run prisma:migrate` — run `prisma migrate dev`
+- `npm run prisma:studio` — opens Prisma Studio
+- `npm run db:seed` — run the seed script (`prisma db seed`)
 
-✅ **UI/UX**
-- Modern SaaS-style design
-- Fully responsive (mobile-first)
-- Dark theme
-- Loading states and error handling
+---
 
-## Database Schema
+## Project structure (short)
 
-- **User**: Authentication and user data
-- **Technician**: Service provider profiles
-- **Booking**: Service requests and status
-- **Review**: Customer ratings and feedback
-- **Account/Session**: NextAuth tables
+- `app/` — Next.js App Router pages and server actions
+- `components/` — UI components grouped by feature
+- `lib/` — app utilities (auth, Prisma client)
+- `prisma/` — `schema.prisma`, migrations and `seed.ts`
+- `public/` — static assets
 
-## Development
+---
 
-### Running Migrations
+## Development tips 💡
 
-```bash
-npx prisma migrate dev
-```
+- Use `npx prisma studio` to inspect and edit data in the DB during development.
+- If you change the Prisma schema, run `npx prisma migrate dev` then `npx prisma generate`.
+- When testing credentials sign-in, either set a `hashedPassword` for a seed user or use the signup UI.
 
-### Seeding Database
-
-```bash
-npx prisma db seed
-```
-
-### Viewing Database
-
-```bash
-npx prisma studio
-```
-
-## Production Deployment
-
-1. Set up production database
-2. Update environment variables
-3. Run migrations: `npx prisma migrate deploy`
-4. Build: `npm run build`
-5. Start: `npm start`
+---
 
 ## License
 
