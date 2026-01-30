@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useSession, signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
-import { Menu, X } from "lucide-react";
+import { Menu, X, LogOut, LayoutDashboard, Search } from "lucide-react";
 import { useState } from "react";
 
 export function Nav() {
@@ -12,106 +13,106 @@ export function Nav() {
   const role = (session?.user as any)?.role;
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  const isActive = (path: string) => pathname?.startsWith(path);
+  const isActive = (path: string) => pathname === path || pathname?.startsWith(`${path}/`);
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/80 backdrop-blur-md">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
+    <nav className="sticky top-0 z-50 w-full border-b border-slate-100 bg-white/80 backdrop-blur-md">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 md:py-5">
+        
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2">
-          <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-sky-500 text-sm font-bold text-slate-950 shadow-lg shadow-sky-500/40">
-            K
-          </span>
-          <span className="text-lg font-bold tracking-tight text-slate-50">KRAFTA</span>
+        <Link href="/" className="flex items-center gap-2 transition-opacity hover:opacity-90">
+          <Image
+            src="/logo.png"
+            alt="KRAFTA logo"
+            width={140}
+            height={40}
+            className="w-auto h-8 md:h-10"
+            priority
+          />
         </Link>
 
         {/* Desktop Navigation */}
-        <div className="hidden md:flex items-center gap-6">
+        <div className="hidden md:flex items-center gap-8">
           {!session ? (
             <>
-              <a href="#how-it-works" className="text-sm font-medium text-slate-300 hover:text-slate-50 transition-colors">
-                How it works
-              </a>
-              <a href="#services" className="text-sm font-medium text-slate-300 hover:text-slate-50 transition-colors">
-                Services
-              </a>
-              <div className="h-4 w-px bg-slate-800 mx-2" />
-              <Link
-                href="/auth/login"
-                className="text-sm font-medium text-slate-300 hover:text-slate-50 transition-colors"
-              >
-                Sign in
-              </Link>
-              <Link
-                href="/auth/login?as=technician"
-                className="rounded-full bg-sky-500 px-5 py-2 text-sm font-semibold text-slate-950 shadow-lg shadow-sky-500/20 hover:bg-sky-400 transition-all hover:scale-105"
-              >
-                Join as Pro
-              </Link>
+              <div className="flex items-center gap-6">
+                <a href="#how-it-works" className="text-sm font-semibold text-slate-600 hover:text-sky-500 transition-colors">
+                  How it works
+                </a>
+                <a href="#services" className="text-sm font-semibold text-slate-600 hover:text-sky-500 transition-colors">
+                  Services
+                </a>
+              </div>
+
+              <div className="h-4 w-px bg-slate-200 mx-2" />
+
+              <div className="flex items-center gap-4">
+                <Link href="/auth/login" className="text-sm font-bold text-slate-700 hover:text-sky-500 transition-colors">
+                  Sign in
+                </Link>
+                <Link
+                  href="/auth/signup?role=professional"
+                  className="rounded-xl bg-sky-500 px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-sky-500/20 hover:bg-sky-400 hover:scale-105 transition-all active:scale-95"
+                >
+                  Join as Pro
+                </Link>
+              </div>
             </>
           ) : (
             <>
-              {role === "CUSTOMER" && (
-                <>
+              <div className="flex items-center gap-6">
+                {role === "CUSTOMER" && (
+                  <>
+                    <Link
+                      href="/customer"
+                      className={`flex items-center gap-2 text-sm font-bold transition-colors ${
+                        isActive("/customer") && !pathname.includes("technicians") ? "text-sky-500" : "text-slate-600 hover:text-sky-500"
+                      }`}
+                    >
+                      <LayoutDashboard className="h-4 w-4" />
+                      Dashboard
+                    </Link>
+                    <Link
+                      href="/customer/technicians"
+                      className={`flex items-center gap-2 text-sm font-bold transition-colors ${
+                        isActive("/customer/technicians") ? "text-sky-500" : "text-slate-600 hover:text-sky-500"
+                      }`}
+                    >
+                      <Search className="h-4 w-4" />
+                      Find Pros
+                    </Link>
+                  </>
+                )}
+
+                {role === "PROFESSIONAL" && (
                   <Link
-                    href="/customer"
-                    className={`text-sm font-medium transition-colors ${
-                      isActive("/customer") && !isActive("/customer/technicians")
-                        ? "text-sky-400"
-                        : "text-slate-300 hover:text-slate-50"
+                    href="/professional"
+                    className={`flex items-center gap-2 text-sm font-bold transition-colors ${
+                      isActive("/professional") ? "text-sky-500" : "text-slate-600 hover:text-sky-500"
                     }`}
                   >
-                    Dashboard
+                    <LayoutDashboard className="h-4 w-4" />
+                    Pro Dashboard
                   </Link>
-                  <Link
-                    href="/customer/technicians"
-                    className={`text-sm font-medium transition-colors ${
-                      isActive("/customer/technicians")
-                        ? "text-sky-400"
-                        : "text-slate-300 hover:text-slate-50"
-                    }`}
-                  >
-                    Browse Technicians
-                  </Link>
-                </>
-              )}
+                )}
+              </div>
 
-              {role === "PROFESSIONAL" && (
-                <Link
-                  href="/professional"
-                  className={`text-sm font-medium transition-colors ${
-                    isActive("/professional")
-                      ? "text-sky-400"
-                      : "text-slate-300 hover:text-slate-50"
-                  }`}
-                >
-                  Dashboard
-                </Link>
-              )}
-
-              {role === "ADMIN" && (
-                <Link
-                  href="/admin"
-                  className={`text-sm font-medium transition-colors ${
-                    isActive("/admin")
-                      ? "text-sky-400"
-                      : "text-slate-300 hover:text-slate-50"
-                  }`}
-                >
-                  Admin
-                </Link>
-              )}
-
-              <div className="h-4 w-px bg-slate-800 mx-2" />
+              <div className="h-4 w-px bg-slate-200 mx-2" />
 
               <div className="flex items-center gap-4">
-                <span className="text-xs text-slate-400 hidden lg:inline-block">
-                  {(session.user as any)?.name || session.user?.email}
-                </span>
+                <div className="flex flex-col items-end mr-2">
+                  <span className="text-xs font-bold text-slate-900 leading-none">
+                    {(session.user as any)?.name?.split(' ')[0] || "User"}
+                  </span>
+                  <span className="text-[10px] font-medium text-slate-400 uppercase tracking-tighter">
+                    {role}
+                  </span>
+                </div>
                 <button
                   onClick={() => signOut({ callbackUrl: "/" })}
-                  className="rounded-full border border-slate-700 px-4 py-1.5 text-xs font-medium text-slate-300 hover:bg-slate-800 transition-colors"
+                  className="flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-rose-500 hover:border-rose-100 transition-all"
                 >
+                  <LogOut className="h-3 w-3" />
                   Sign out
                 </button>
               </div>
@@ -120,56 +121,50 @@ export function Nav() {
         </div>
 
         {/* Mobile Menu Button */}
-        <button 
-          className="md:hidden p-2 text-slate-400 hover:text-slate-50"
+        <button
+          className="md:hidden p-2 rounded-lg bg-slate-50 text-slate-600"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         >
           {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </button>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Mobile Menu Overlay */}
       {isMobileMenuOpen && (
-        <div className="md:hidden border-t border-slate-800 bg-slate-950 px-4 py-6 space-y-4">
+        <div className="md:hidden border-t border-slate-100 bg-white px-4 py-6 space-y-6 shadow-xl animate-in fade-in slide-in-from-top-4">
           {!session ? (
-            <>
-              <a href="#how-it-works" className="block text-sm font-medium text-slate-300" onClick={() => setIsMobileMenuOpen(false)}>
-                How it works
-              </a>
-              <a href="#services" className="block text-sm font-medium text-slate-300" onClick={() => setIsMobileMenuOpen(false)}>
-                Services
-              </a>
-              <div className="h-px w-full bg-slate-800 my-4" />
+            <div className="flex flex-col gap-4">
+              <a href="#how-it-works" onClick={() => setIsMobileMenuOpen(false)} className="text-base font-bold text-slate-700">How it works</a>
+              <a href="#services" onClick={() => setIsMobileMenuOpen(false)} className="text-base font-bold text-slate-700">Services</a>
+              <hr className="border-slate-100" />
+              <Link href="/auth/login" onClick={() => setIsMobileMenuOpen(false)} className="text-base font-bold text-slate-700">Sign in</Link>
               <Link
-                href="/auth/login"
-                className="block text-sm font-medium text-slate-300"
+                href="/auth/signup?role=professional"
                 onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Sign in
-              </Link>
-              <Link
-                href="/auth/login?as=technician"
-                className="block w-full rounded-lg bg-sky-500 px-4 py-2 text-center text-sm font-semibold text-slate-950"
-                onClick={() => setIsMobileMenuOpen(false)}
+                className="block w-full rounded-xl bg-sky-500 px-4 py-3 text-center text-sm font-bold text-white shadow-lg shadow-sky-500/20"
               >
                 Join as Pro
               </Link>
-            </>
+            </div>
           ) : (
-            <>
-              <div className="mb-4 pb-4 border-b border-slate-800">
-                <p className="text-sm font-medium text-slate-200">
-                  {(session.user as any)?.name || session.user?.email}
-                </p>
-                <p className="text-xs text-slate-500 mt-1">{role}</p>
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center gap-3 pb-4 border-b border-slate-100">
+                <div className="h-10 w-10 rounded-full bg-sky-100 flex items-center justify-center text-sky-600 font-bold">
+                  {(session.user as any)?.name?.[0] || "U"}
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-slate-900">{(session.user as any)?.name}</p>
+                  <p className="text-xs text-slate-500 lowercase">{role}</p>
+                </div>
               </div>
               <button
                 onClick={() => signOut({ callbackUrl: "/" })}
-                className="block w-full rounded-lg border border-slate-700 px-4 py-2 text-center text-sm font-medium text-slate-300 hover:bg-slate-800"
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-100 px-4 py-3 text-sm font-bold text-slate-600"
               >
+                <LogOut className="h-4 w-4" />
                 Sign out
               </button>
-            </>
+            </div>
           )}
         </div>
       )}

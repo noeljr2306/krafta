@@ -16,11 +16,8 @@ export default async function SignupPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-950/90 px-4">
-      <div className="w-full max-w-md space-y-8 rounded-2xl bg-slate-900/80 p-8 shadow-xl ring-1 ring-slate-800">
-        <AuthSignupForm />
-      </div>
+    <div className="flex min-h-[80vh] items-center justify-center px-4">
+      <AuthSignupForm />
     </div>
   );
 }
-
