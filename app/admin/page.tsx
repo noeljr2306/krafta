@@ -1,7 +1,7 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { BookingStatus } from "@prisma/client";
-import { Users, HardHat, Ticket, ArrowUpRight, ShieldCheck, Trash2 } from "lucide-react";
+import { Users, HardHat, Ticket } from "lucide-react";
 
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -58,7 +58,6 @@ export default async function AdminDashboardPage() {
     <div className="min-h-screen bg-slate-50/50 pb-20">
       <div className="mx-auto max-w-7xl px-4 py-12">
         
-        {/* Admin Header */}
         <header className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
@@ -82,7 +81,6 @@ export default async function AdminDashboardPage() {
           </div>
         </header>
 
-        {/* High Level Stats */}
         <section className="grid gap-6 md:grid-cols-3">
           <StatCard label="Total Users" value={totalUsers} icon={<Users className="h-5 w-5" />} description="Active accounts" />
           <StatCard label="Professionals" value={totalTechnicians} icon={<HardHat className="h-5 w-5" />} description="Verified & Pending" />
@@ -91,7 +89,6 @@ export default async function AdminDashboardPage() {
 
         <div className="mt-12 grid gap-8 lg:grid-cols-[1.4fr_1fr]">
           
-          {/* Recent Activity Column */}
           <div className="space-y-8">
             <section>
                <h2 className="mb-4 text-sm font-black uppercase tracking-widest text-slate-900">Recent Booking Flow</h2>
@@ -113,7 +110,6 @@ export default async function AdminDashboardPage() {
                </div>
             </section>
 
-            {/* Transactions Table */}
             <section>
               <h2 className="mb-4 text-sm font-black uppercase tracking-widest text-slate-900">Revenue Stream</h2>
               <div className="overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
@@ -143,7 +139,6 @@ export default async function AdminDashboardPage() {
             </section>
           </div>
 
-          {/* Verification Sidebar */}
           <aside className="space-y-8">
             <section>
               <h2 className="mb-4 text-sm font-black uppercase tracking-widest text-slate-900 text-sky-600">Verification Queue</h2>
@@ -165,7 +160,6 @@ export default async function AdminDashboardPage() {
               </div>
             </section>
 
-            {/* Quick User List */}
             <section>
                <h2 className="mb-4 text-sm font-black uppercase tracking-widest text-slate-900">User Control</h2>
                <div className="overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
@@ -187,7 +181,6 @@ export default async function AdminDashboardPage() {
   );
 }
 
-// Reusable Stat Component
 function StatCard({ label, value, icon, description }: { label: string, value: number, icon: React.ReactNode, description: string }) {
   return (
     <div className="rounded-[2.5rem] border border-slate-100 bg-white p-8 shadow-sm transition-all hover:shadow-md">

@@ -46,7 +46,6 @@ export async function deleteUser(userId: string): Promise<AdminActionResult> {
       return { success: false, error: "Unauthorized" };
     }
 
-    // Prevent deleting self
     if (session.user.id === userId) {
       return { success: false, error: "Cannot delete your own account" };
     }

@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { BookingActions } from "@/components/booking/booking-actions";
 
 import { ProfileSetupForm } from "@/components/professional/profile-setup-form";
+import Image from "next/image";
 
 export default async function ProfessionalDashboardPage() {
   const session = await getServerSession(authOptions);
@@ -193,7 +194,7 @@ export default async function ProfessionalDashboardPage() {
                <div className="space-y-4">
                  <div className="flex items-center gap-3">
                    <div className="h-10 w-10 rounded-full bg-slate-800 flex items-center justify-center text-lg">
-                     {technician.user.image ? <img src={technician.user.image} alt="" className="rounded-full" /> : "👤"}
+                     {technician.user.image ? <Image src={technician.user.image} alt="" width={10} height={10} className="rounded-full" /> : "👤"}
                    </div>
                    <div>
                      <p className="text-sm font-medium text-slate-200">{technician.user.name}</p>

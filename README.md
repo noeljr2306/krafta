@@ -14,7 +14,7 @@ A full-stack demo application that connects customers with verified local servic
 
 ---
 
-## Features
+##  Features
 
 - Email/password sign-up and sign-in (Credentials provider)
 - Google OAuth (requires `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`)
