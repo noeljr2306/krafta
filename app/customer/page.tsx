@@ -12,11 +12,11 @@ import { PaymentButton } from "@/components/booking/payment-button";
 export default async function CustomerDashboardPage() {
   const session = await getServerSession(authOptions);
 
-  if (!session?.user) {
+  if (!session?.user?.id) {
     redirect("/auth/login");
   }
 
-  const userId = session.user.id as string;
+  const userId = session.user.id;
 
   const [requests, activeJobs, history] = await prisma.$transaction([
     prisma.booking.findMany({
