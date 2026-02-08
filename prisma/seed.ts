@@ -1,6 +1,3 @@
-// Seed script for KRAFTA demo data
-// Run with: npx prisma db seed
-
 import { PrismaClient, Role, BookingStatus } from "@prisma/client";
 
 const prisma = new PrismaClient();
@@ -8,13 +5,16 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("🌱 Seeding KRAFTA demo data...");
 
-  // Clear existing data in a safe order
-  await prisma.review.deleteMany();
-  await prisma.booking.deleteMany();
-  await prisma.technician.deleteMany();
-  await prisma.user.deleteMany();
+  try {
+    await prisma.review.deleteMany();
+    await prisma.booking.deleteMany();
+    await prisma.technician.deleteMany();
+    await prisma.user.deleteMany();
+    console.log("Cleaned up existing data.");
+  } catch (error) {
+    console.log("No existing tables found to clean, skipping to creation...");
+  }
 
-  // Admin
   const admin = await prisma.user.create({
     data: {
       name: "KRAFTA Admin",
@@ -23,7 +23,6 @@ async function main() {
     },
   });
 
-  // Customers
   const customer1 = await prisma.user.create({
     data: {
       name: "Noel Customer",
@@ -42,7 +41,6 @@ async function main() {
     },
   });
 
-  // Technicians + Users
   const electricianUser = await prisma.user.create({
     data: {
       name: "Maria Electric",
@@ -60,6 +58,8 @@ async function main() {
       phone: "+1 555 0201",
     },
   });
+
+  // --- TECHNICIANS ---
 
   const electrician = await prisma.technician.create({
     data: {
@@ -95,22 +95,24 @@ async function main() {
     },
   });
 
-  // Bookings + Reviews
+  // --- BOOKINGS (The "Meat" of the Demo) ---
+
+  // 1. Completed & Reviewed
   const booking1 = await prisma.booking.create({
     data: {
       customerId: customer1.id,
       technicianId: electrician.id,
       status: BookingStatus.COMPLETED,
-      requestedAt: new Date(),
-      scheduledFor: new Date(),
-      completedAt: new Date(),
+      requestedAt: new Date(Date.now() - 1000 * 60 * 60 * 48), // 2 days ago
+      completedAt: new Date(Date.now() - 1000 * 60 * 60 * 40),
       description: "Living room lights flickering and one socket not working.",
       address: "Customer address, Lekki Phase 1",
       priceQuoted: 150,
     },
   });
 
-  const booking2 = await prisma.booking.create({
+  // 2. Accepted (Scheduled for tomorrow)
+  await prisma.booking.create({
     data: {
       customerId: customer2.id,
       technicianId: plumber.id,
@@ -123,13 +125,41 @@ async function main() {
     },
   });
 
+  // 3. NEW: Paid Booking (Work done, payment confirmed)
+  await prisma.booking.create({
+    data: {
+      customerId: customer1.id,
+      technicianId: plumber.id,
+      status: BookingStatus.PAID,
+      requestedAt: new Date(Date.now() - 1000 * 60 * 60 * 24),
+      description: "Toilet flush system repair.",
+      address: "Customer address, Lekki Phase 1",
+      priceQuoted: 90,
+    },
+  });
+
+  // 4. NEW: Pending Request (For testing the Admin/Tech notification flow)
+  await prisma.booking.create({
+    data: {
+      customerId: customer2.id,
+      technicianId: electrician.id,
+      status: BookingStatus.PENDING,
+      requestedAt: new Date(),
+      description: "Installation of a new water heater.",
+      address: "Customer address, Yaba",
+    },
+  });
+
+  // --- REVIEWS ---
+
   await prisma.review.create({
     data: {
       bookingId: booking1.id,
       customerId: customer1.id,
       technicianId: electrician.id,
       rating: 5,
-      comment: "Arrived on time, fixed everything quickly, and explained the issue clearly.",
+      comment:
+        "Arrived on time, fixed everything quickly, and explained the issue clearly.",
     },
   });
 
@@ -149,5 +179,3 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
-
-
