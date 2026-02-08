@@ -149,10 +149,10 @@ export default async function CustomerDashboardPage() {
                       </span>
                     </div>
                     <h3 className="mt-4 text-lg font-bold text-slate-900">
-                      {booking.technician.user.name}
+                      {booking.technician?.user?.name ?? "Technician Unavailable"}
                     </h3>
                     <p className="text-sm font-medium text-sky-600">
-                      {booking.technician.title}
+                      {booking.technician?.title?? "_"}
                     </p>
 
                     <div className="mt-4 flex items-center gap-2 text-xs font-semibold text-slate-600">
@@ -227,7 +227,7 @@ export default async function CustomerDashboardPage() {
                       : "—"}
                   </p>
 
-                  {booking.status === "COMPLETED" &&
+                  {booking.status === "COMPLETED" && booking.technicianId &&
                     (!booking.review ? (
                       <div className="mt-4 pt-4 border-t border-slate-50">
                         <ReviewForm

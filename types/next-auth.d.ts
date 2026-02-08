@@ -1,6 +1,6 @@
 import NextAuth, { DefaultSession } from "next-auth";
 import { JWT } from "next-auth/jwt";
-import { Role } from "@prisma/client"; // import Prisma Role enum
+import type { Role } from "@prisma/client"; // import Prisma Role enum (type-only)
 
 declare module "next-auth" {
   interface Session {
