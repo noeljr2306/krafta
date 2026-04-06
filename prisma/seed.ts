@@ -1,4 +1,5 @@
 import { PrismaClient, Role, BookingStatus } from "@prisma/client";
+import { hashSync } from "bcryptjs";
 
 const prisma = new PrismaClient();
 
@@ -18,7 +19,9 @@ async function main() {
   const admin = await prisma.user.create({
     data: {
       name: "KRAFTA Admin",
-      email: "admin@krafta.local",
+      email: "admin@krafta.com",
+      hashedPassword:
+        "$2a$12$tHEgYRxpEf0He7qHLgWjeea6xMr3c7RJsx3Fc5wiVMfDYXH60N8uG",
       role: Role.ADMIN,
     },
   });
@@ -28,6 +31,8 @@ async function main() {
       name: "Noel Customer",
       email: "customer@krafta.local",
       role: Role.CUSTOMER,
+      hashedPassword:
+        "$2a$12$LO8jBoIliRE5ZEerVK8vIep3tEnP95OJbwFMKjjXhdsrjROpzE6Xe",
       phone: "+1 555 0100",
     },
   });
@@ -37,6 +42,8 @@ async function main() {
       name: "Alex Homeowner",
       email: "alex@krafta.local",
       role: Role.CUSTOMER,
+      hashedPassword:
+        "$2a$12$LO8jBoIliRE5ZEerVK8vIep3tEnP95OJbwFMKjjXhdsrjROpzE6Xe",
       phone: "+1 555 0101",
     },
   });
@@ -46,6 +53,8 @@ async function main() {
       name: "Maria Electric",
       email: "maria@krafta.local",
       role: Role.PROFESSIONAL,
+      hashedPassword:
+        "$2a$12$LO8jBoIliRE5ZEerVK8vIep3tEnP95OJbwFMKjjXhdsrjROpzE6Xe",
       phone: "+1 555 0200",
     },
   });
@@ -55,6 +64,8 @@ async function main() {
       name: "James Plumbing",
       email: "james@krafta.local",
       role: Role.PROFESSIONAL,
+      hashedPassword:
+        "$2a$12$LO8jBoIliRE5ZEerVK8vIep3tEnP95OJbwFMKjjXhdsrjROpzE6Xe",
       phone: "+1 555 0201",
     },
   });

@@ -25,9 +25,6 @@ export const authOptions: NextAuthOptions = {
         if (!credentials?.email || !credentials?.password) {
           return null;
         }
-        if (!credentials?.email || !credentials?.password) {
-          return null;
-        }
         const DEFAULT_ADMIN_EMAIL = "admin@krafta.com";
         const DEFAULT_ADMIN_PASS = "krafta2026";
 
@@ -42,28 +39,33 @@ export const authOptions: NextAuthOptions = {
             role: "ADMIN",
           };
         }
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
-        });
+        try {
+          const user = await prisma.user.findUnique({
+            where: { email: credentials.email },
+          });
 
-        if (!user || !user.hashedPassword) {
+          if (!user || !user.hashedPassword) {
+            return null;
+          }
+
+          const isValid = await compare(
+            credentials.password,
+            user.hashedPassword,
+          );
+
+          if (!isValid) return null;
+
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            image: user.image,
+            role: user.role,
+          };
+        } catch (error) {
+          console.error("Auth error:", error);
           return null;
         }
-
-        const isValid = await compare(
-          credentials.password,
-          user.hashedPassword,
-        );
-
-        if (!isValid) return null;
-
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          image: user.image,
-          role: user.role,
-        };
       },
     }),
     GoogleProvider({
@@ -82,7 +84,7 @@ export const authOptions: NextAuthOptions = {
       if (!token.role && token.email) {
         const dbUser = await prisma.user.findUnique({
           where: { email: token.email },
-           select: { id: true, role: true },
+          select: { id: true, role: true },
         });
 
         if (dbUser) {

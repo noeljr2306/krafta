@@ -2,7 +2,7 @@
 
 import { hash } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
-import { Role } from "@prisma/client";
+import { Role, Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 
 export interface SignupResult {
@@ -17,7 +17,7 @@ export async function signup(
   email: string,
   password: string,
   name: string,
-  role: Role = Role.CUSTOMER
+  role: Role = Role.CUSTOMER,
 ): Promise<SignupResult> {
   try {
     // Validate inputs
@@ -26,7 +26,10 @@ export async function signup(
     }
 
     if (password.length < 6) {
-      return { success: false, error: "Password must be at least 6 characters" };
+      return {
+        success: false,
+        error: "Password must be at least 6 characters",
+      };
     }
 
     // Check if user already exists
@@ -55,7 +58,12 @@ export async function signup(
     return { success: true };
   } catch (error) {
     console.error("Signup error:", error);
-    return { success: false, error: "Failed to create account. Please try again." };
+    let errorMsg = "Failed to create account. Please try again.";
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === "P2002") {
+        errorMsg = "Email already in use.";
+      }
+    }
+    return { success: false, error: errorMsg };
   }
 }
-
