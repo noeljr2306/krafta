@@ -6,40 +6,51 @@ export function Services() {
   const doubledEssentials = [...essentials, ...essentials];
 
   return (
-    <section id="services" className="py-20 bg-white overflow-hidden">
-      <div className="container mx-auto px-4 mb-10">
-        <h2 className="text-6xl font-bold tracking-tight text-zinc-800">
-          Home care essentials
+    <section id="services" className="py-24 bg-white overflow-hidden">
+      {/* Header: Centered & Minimal */}
+      <div className="container mx-auto px-6 mb-16 text-center">
+        <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900 uppercase">
+          Home Care <span className="text-sky-500">Essentials</span>
         </h2>
-        <p className="mt-2 text-medium text-slate-500">
-          Tailored solutions for your daily maintenance needs.
+        <p className="mt-4 text-slate-500 text-lg font-medium">
+          Professional solutions tailored for your daily maintenance.
         </p>
       </div>
-      <div className="relative flex">
-        <div className="flex animate-scroll whitespace-nowrap">
+
+      {/* Scrolling Track */}
+      <div className="relative">
+        {/* Soft Edge Fades for Smooth Transitions */}
+        <div className="absolute inset-y-0 left-0 w-16 md:w-32 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
+        <div className="absolute inset-y-0 right-0 w-16 md:w-32 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
+
+        <div className="flex animate-scroll whitespace-nowrap py-4 hover:[animation-play-state:paused]">
           {doubledEssentials.map((item, index) => (
             <div
               key={index}
-              className="mx-4 h-105 w-80 shrink-0 flex flex-col overflow-hidden rounded-2xl shadow-xl transition-transform hover:scale-105"
-              style={{ backgroundColor: item.color }}
+              className="mx-4 group shrink-0"
             >
-              <div className="relative flex-1 p-4">
-                <Image
-                  src={item.img}
-                  alt={item.name}
-                  width={600}
-                  height={600}
-                  sizes="(max-width: 768px) 100vw, 33vw"
-                  quality={90}
-                  className="h-full w-full rounded-2xl object-cover"
-                  priority={index < 3}
-                />
-              </div>
+              {/* Card Container */}
+              <div 
+                className="h-[420px] w-[300px] rounded-[2.5rem] p-4 transition-all duration-500 group-hover:shadow-2xl group-hover:-translate-y-3"
+                style={{ backgroundColor: item.color }}
+              >
+                {/* Image Wrapper: Slightly smaller than the card to show the bg color as a frame */}
+                <div className="relative h-[85%] w-full overflow-hidden rounded-[2rem] shadow-inner bg-white/20">
+                  <Image
+                    src={item.img}
+                    alt={item.name}
+                    fill
+                    sizes="300px"
+                    className="object-cover transition-transform duration-700 group-hover:scale-110"
+                  />
+                </div>
 
-              <div className="p-5">
-                <p className="text-lg font-bold text-white whitespace-normal leading-tight font-sans">
-                  {item.name}
-                </p>
+                {/* Text Label: Simple & Bold */}
+                <div className="h-[15%] flex items-center justify-center px-2">
+                  <span className="text-white text-lg font-bold tracking-wide truncate">
+                    {item.name}
+                  </span>
+                </div>
               </div>
             </div>
           ))}
