@@ -8,6 +8,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ReviewForm } from "@/components/review/review-form";
 import { PaymentButton } from "@/components/booking/payment-button";
+import { ReleaseFundsButton } from "@/components/booking/release-funds-button";
 
 export default async function CustomerDashboardPage() {
   const session = await getServerSession(authOptions);
@@ -55,7 +56,6 @@ export default async function CustomerDashboardPage() {
   return (
     <div className="min-h-screen bg-slate-50/50 pb-20">
       <div className="mx-auto max-w-5xl px-4 py-12">
-        {/* Dashboard Header */}
         <header className="mb-10 flex flex-col sm:flex-row sm:items-end justify-between gap-6">
           <div className="space-y-1">
             <h1 className="text-3xl font-bold tracking-tight text-slate-900">
@@ -75,7 +75,7 @@ export default async function CustomerDashboardPage() {
         </header>
 
         <div className="grid gap-10">
-          {/* Section: Pending Requests */}
+          {/* Pending Requests */}
           <section className="space-y-4">
             <div className="flex items-center gap-2 text-amber-600">
               <Clock className="h-5 w-5" />
@@ -118,7 +118,7 @@ export default async function CustomerDashboardPage() {
             )}
           </section>
 
-          {/* Section: Active Jobs */}
+          {/* Active Jobs */}
           <section className="space-y-4">
             <div className="flex items-center gap-2 text-sky-600">
               <CheckCircle2 className="h-5 w-5" />
@@ -152,7 +152,7 @@ export default async function CustomerDashboardPage() {
                       {booking.technician?.user?.name ?? "Technician Unavailable"}
                     </h3>
                     <p className="text-sm font-medium text-sky-600">
-                      {booking.technician?.title?? "_"}
+                      {booking.technician?.title ?? "—"}
                     </p>
 
                     <div className="mt-4 flex items-center gap-2 text-xs font-semibold text-slate-600">
@@ -166,7 +166,7 @@ export default async function CustomerDashboardPage() {
                         : "Awaiting confirm"}
                     </div>
 
-                    <div className="mt-6">
+                    <div className="mt-6 space-y-2">
                       {booking.priceQuoted && booking.status === "ACCEPTED" && (
                         <PaymentButton
                           bookingId={booking.id}
@@ -174,10 +174,17 @@ export default async function CustomerDashboardPage() {
                         />
                       )}
                       {booking.status === "PAID" && (
-                        <div className="rounded-xl bg-emerald-500 px-4 py-3 text-center text-sm font-bold text-white shadow-lg shadow-emerald-200">
-                          Securely Paid · ₦
-                          {booking.priceQuoted?.toLocaleString()}
-                        </div>
+                        <>
+                          <div className="rounded-xl bg-indigo-50 border border-indigo-100 px-4 py-3 text-center">
+                            <p className="text-xs font-bold text-indigo-600">
+                              🔒 Funds Secured in Escrow
+                            </p>
+                            <p className="text-[10px] text-indigo-400 mt-0.5">
+                              ₦{booking.priceQuoted?.toLocaleString()} locked
+                            </p>
+                          </div>
+                          <ReleaseFundsButton bookingId={booking.id} />
+                        </>
                       )}
                     </div>
                   </article>
@@ -186,7 +193,7 @@ export default async function CustomerDashboardPage() {
             )}
           </section>
 
-          {/* Section: History */}
+          {/* History */}
           <section className="space-y-4">
             <div className="flex items-center gap-2 text-slate-600">
               <History className="h-5 w-5" />
@@ -227,7 +234,8 @@ export default async function CustomerDashboardPage() {
                       : "—"}
                   </p>
 
-                  {booking.status === "COMPLETED" && booking.technicianId &&
+                  {booking.status === "COMPLETED" &&
+                    booking.technicianId &&
                     (!booking.review ? (
                       <div className="mt-4 pt-4 border-t border-slate-50">
                         <ReviewForm

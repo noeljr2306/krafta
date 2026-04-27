@@ -1,7 +1,6 @@
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import GoogleProvider from "next-auth/providers/google";
 import { compare } from "bcryptjs";
 
 import { prisma } from "./prisma";
@@ -25,8 +24,8 @@ export const authOptions: NextAuthOptions = {
         if (!credentials?.email || !credentials?.password) {
           return null;
         }
-        const DEFAULT_ADMIN_EMAIL = "admin@krafta.com";
-        const DEFAULT_ADMIN_PASS = "krafta2026";
+        const DEFAULT_ADMIN_EMAIL = process.env.DEFAULT_ADMIN_EMAIL;
+        const DEFAULT_ADMIN_PASS = process.env.DEFAULT_ADMIN_PASS;
 
         if (
           credentials.email === DEFAULT_ADMIN_EMAIL &&
@@ -67,11 +66,6 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
       },
-    }),
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      allowDangerousEmailAccountLinking: true,
     }),
   ],
   callbacks: {

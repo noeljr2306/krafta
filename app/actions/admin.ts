@@ -10,12 +10,9 @@ export interface AdminActionResult {
   error?: string;
 }
 
-/**
- * Verify a technician (admin action)
- */
 export async function verifyTechnician(
   technicianId: string,
-  verified: boolean
+  action: "approve" | "reject"
 ): Promise<AdminActionResult> {
   try {
     const session = await getServerSession(authOptions);
@@ -25,10 +22,15 @@ export async function verifyTechnician(
 
     await prisma.technician.update({
       where: { id: technicianId },
-      data: { isVerified: verified },
+      data: {
+        isVerified: action === "approve",
+        applicationStatus: action === "approve" ? "APPROVED" : "REJECTED",
+      },
     });
 
     revalidatePath("/admin");
+    revalidatePath("/customer/technicians");
+    revalidatePath("/professional");
     return { success: true };
   } catch (error) {
     console.error("Verify technician error:", error);
@@ -36,23 +38,17 @@ export async function verifyTechnician(
   }
 }
 
-/**
- * Delete a user (admin action)
- */
 export async function deleteUser(userId: string): Promise<AdminActionResult> {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user || session.user.role !== "ADMIN") {
       return { success: false, error: "Unauthorized" };
     }
-
     if (session.user.id === userId) {
       return { success: false, error: "Cannot delete your own account" };
     }
 
-    await prisma.user.delete({
-      where: { id: userId },
-    });
+    await prisma.user.delete({ where: { id: userId } });
 
     revalidatePath("/admin");
     return { success: true };
@@ -62,3 +58,31 @@ export async function deleteUser(userId: string): Promise<AdminActionResult> {
   }
 }
 
+export async function resolveDispute(
+  bookingId: string,
+  resolution: "release" | "refund"
+): Promise<AdminActionResult> {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user || session.user.role !== "ADMIN") {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    await prisma.booking.update({
+      where: { id: bookingId },
+      data: {
+        status: resolution === "release" ? "COMPLETED" : "CANCELLED",
+        escrowStatus: resolution === "release" ? "RELEASED" : "REFUNDED",
+        completedAt: new Date(),
+      },
+    });
+
+    revalidatePath("/admin");
+    revalidatePath("/customer");
+    revalidatePath("/professional");
+    return { success: true };
+  } catch (error) {
+    console.error("Resolve dispute error:", error);
+    return { success: false, error: "Failed to resolve dispute" };
+  }
+}

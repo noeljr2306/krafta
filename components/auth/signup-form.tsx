@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, FormEvent, Suspense } from "react";
+import { useState, useRef, FormEvent, Suspense } from "react";
 import { signup } from "@/app/actions/auth";
 import { Role } from "@prisma/client";
 import Link from "next/link";
@@ -12,6 +12,9 @@ import {
   Lock,
   ShieldCheck,
   Briefcase,
+  Upload,
+  Camera,
+  CheckCircle2,
 } from "lucide-react";
 
 export function AuthSignupForm() {
@@ -25,17 +28,14 @@ export function AuthSignupForm() {
     </Suspense>
   );
 }
+
 function getRoleFromParams(searchParams: ReturnType<typeof useSearchParams>) {
   const roleParam = searchParams.get("role") || searchParams.get("as");
-
   if (!roleParam) return Role.CUSTOMER;
-
   const normalized = roleParam.toUpperCase();
-
   if (normalized === "PROFESSIONAL" || normalized === "TECHNICIAN") {
     return Role.PROFESSIONAL;
   }
-
   return Role.CUSTOMER;
 }
 
@@ -49,8 +49,35 @@ function SignupFormContent() {
   const initialRole = getRoleFromParams(searchParams);
   const [role, setRole] = useState<Role>(initialRole);
 
+  // Professional fields
+  const [idFile, setIdFile] = useState<File | null>(null);
+  const [idPreview, setIdPreview] = useState<string | null>(null);
+  const [livenessState, setLivenessState] = useState<
+    "idle" | "capturing" | "done"
+  >("idle");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  function handleIdUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIdFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setIdPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function handleLivenessCheck() {
+    setLivenessState("capturing");
+    // Simulate liveness check — 2 second delay then mark done
+    setTimeout(() => {
+      setLivenessState("done");
+    }, 2000);
+  }
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -61,8 +88,26 @@ function SignupFormContent() {
       return;
     }
 
+    if (role === Role.PROFESSIONAL) {
+      if (!idFile || !idPreview) {
+        setError("Please upload your government ID");
+        return;
+      }
+      if (livenessState !== "done") {
+        setError("Please complete the liveness check");
+        return;
+      }
+    }
+
     setLoading(true);
-    const result = await signup(email, password, name, role);
+
+    const result = await signup(
+      email,
+      password,
+      name,
+      role,
+      role === Role.PROFESSIONAL ? idPreview : undefined,
+    );
 
     if (result.success) {
       router.push("/auth/login?registered=true");
@@ -85,7 +130,7 @@ function SignupFormContent() {
           </p>
         </div>
 
-        {/* Role Selection Toggle Cards */}
+        {/* Role Selection */}
         <div className="grid grid-cols-2 gap-4">
           <button
             type="button"
@@ -195,6 +240,96 @@ function SignupFormContent() {
               </div>
             </div>
           </div>
+
+          {/* Professional-only fields */}
+          {role === Role.PROFESSIONAL && (
+            <div className="space-y-4 rounded-2xl border border-sky-100 bg-sky-50/40 p-4">
+              <p className="text-xs font-black uppercase tracking-widest text-sky-600">
+                Professional Verification
+              </p>
+
+              {/* ID Upload */}
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-slate-700">
+                  Government ID Upload
+                </label>
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className={`cursor-pointer rounded-xl border-2 border-dashed p-4 text-center transition-all ${
+                    idPreview
+                      ? "border-emerald-400 bg-emerald-50"
+                      : "border-slate-200 bg-slate-50/50 hover:border-sky-400 hover:bg-sky-50/50"
+                  }`}
+                >
+                  {idPreview ? (
+                    <div className="space-y-2">
+                      <img
+                        src={idPreview}
+                        alt="ID Preview"
+                        className="mx-auto h-24 w-auto rounded-lg object-cover shadow-sm"
+                      />
+                      <p className="text-xs font-semibold text-emerald-600">
+                        ✓ ID uploaded — click to change
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <Upload className="mx-auto h-6 w-6 text-slate-400" />
+                      <p className="text-xs font-semibold text-slate-500">
+                        Click to upload your ID
+                      </p>
+                      <p className="text-[10px] text-slate-400">
+                        Driver&apos;s License, NIN, or Passport
+                      </p>
+                    </div>
+                  )}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleIdUpload}
+                  />
+                </div>
+              </div>
+
+              {/* Liveness Check */}
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-slate-700">
+                  Liveness Check
+                </label>
+                {livenessState === "idle" && (
+                  <button
+                    type="button"
+                    onClick={handleLivenessCheck}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 shadow-sm transition-all hover:border-sky-400 hover:bg-sky-50 hover:text-sky-600"
+                  >
+                    <Camera className="h-4 w-4" />
+                    Start Liveness Capture
+                  </button>
+                )}
+                {livenessState === "capturing" && (
+                  <div className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3">
+                    <Loader2 className="h-4 w-4 animate-spin text-amber-500" />
+                    <span className="text-sm font-bold text-amber-600">
+                      Verifying your face...
+                    </span>
+                  </div>
+                )}
+                {livenessState === "done" && (
+                  <div className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                    <span className="text-sm font-bold text-emerald-600">
+                      Liveness check passed ✓
+                    </span>
+                  </div>
+                )}
+                <p className="text-[10px] text-slate-400">
+                  Hold your ID next to your face and look at the camera
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         {error && (

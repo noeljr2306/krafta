@@ -66,6 +66,7 @@ export async function createProfessionalProfile(
         baseRate: data.baseRate,
         hourlyRate: data.hourlyRate,
         isVerified: false,
+        applicationStatus: "PENDING",
       },
     });
 

@@ -7,7 +7,6 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
 }
 
 enum Role {
@@ -19,14 +18,18 @@ enum Role {
 enum BookingStatus {
   PENDING
   ACCEPTED
+  CASH_PENDING
   PAID
+  DISPUTED
   REJECTED
   COMPLETED
   CANCELLED
 }
 
-// SQLite doesn't support enums well, but Prisma handles it. 
-// However, for array of enums, we need to use String.
+enum PaymentMethod {
+  ESCROW
+  CASH
+}
 
 model User {
   id             String    @id @default(cuid())
@@ -42,39 +45,42 @@ model User {
   sessions       Session[]
 
   technician     Technician?
-  bookings       Booking[] @relation("CustomerBookings")
-  reviews        Review[]  @relation("CustomerReviews")
+  bookings       Booking[]  @relation("CustomerBookings")
+  reviews        Review[]   @relation("CustomerReviews")
 
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
 }
 
 model Technician {
-  id            String           @id @default(cuid())
-  userId        String           @unique
-  user          User             @relation(fields: [userId], references: [id])
+  id                String    @id @default(cuid())
+  userId            String    @unique
+  user              User      @relation(fields: [userId], references: [id])
 
-  title         String
-  bio           String
-  skills        String           // Comma separated string
-  categories    String           // Comma separated string of ServiceCategory
-  baseRate      Int?
-  hourlyRate    Int?
+  title             String
+  bio               String
+  skills            String
+  categories        String
+  baseRate          Int?
+  hourlyRate        Int?
 
-  city          String
-  area          String
-  latitude      Float?
-  longitude     Float?
+  city              String
+  area              String
+  latitude          Float?
+  longitude         Float?
 
-  isVerified    Boolean          @default(false)
-  averageRating Float            @default(0)
-  reviewCount   Int              @default(0)
+  isVerified        Boolean   @default(false)
+  applicationStatus String?   @default("PENDING")
+  idDocument        String?
 
-  bookings      Booking[]        @relation("TechnicianBookings")
-  reviews       Review[]         @relation("TechnicianReviews")
+  averageRating     Float     @default(0)
+  reviewCount       Int       @default(0)
 
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
+  bookings          Booking[] @relation("TechnicianBookings")
+  reviews           Review[]  @relation("TechnicianReviews")
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 }
 
 model Booking {
@@ -87,6 +93,8 @@ model Booking {
   technician     Technician     @relation("TechnicianBookings", fields: [technicianId], references: [id])
 
   status         BookingStatus  @default(PENDING)
+  paymentMethod  PaymentMethod? @default(ESCROW)
+
   requestedAt    DateTime       @default(now())
   scheduledFor   DateTime?
   completedAt    DateTime?
@@ -95,6 +103,16 @@ model Booking {
   address        String
   priceQuoted    Int?
 
+  // Escrow fields
+  escrowStatus   String?        @default("NONE")
+  escrowTxHash   String?
+  escrowDeadline DateTime?      // auto-release after this time if no dispute
+  disputeReason  String?        // set when status = DISPUTED
+
+  // Cash fields
+  cashConfirmedByPro      Boolean @default(false)
+  cashConfirmedByCustomer Boolean @default(false)
+
   review         Review?
 
   createdAt      DateTime       @default(now())
@@ -102,24 +120,22 @@ model Booking {
 }
 
 model Review {
-  id           String      @id @default(cuid())
+  id           String     @id @default(cuid())
 
-  bookingId    String      @unique
-  booking      Booking     @relation(fields: [bookingId], references: [id])
+  bookingId    String     @unique
+  booking      Booking    @relation(fields: [bookingId], references: [id])
 
   customerId   String
-  customer     User        @relation("CustomerReviews", fields: [customerId], references: [id])
+  customer     User       @relation("CustomerReviews", fields: [customerId], references: [id])
 
   technicianId String
-  technician   Technician  @relation("TechnicianReviews", fields: [technicianId], references: [id])
+  technician   Technician @relation("TechnicianReviews", fields: [technicianId], references: [id])
 
   rating       Int
   comment      String
 
-  createdAt    DateTime    @default(now())
+  createdAt    DateTime   @default(now())
 }
-
-// NextAuth models (Prisma adapter)
 
 model Account {
   id                String  @id @default(cuid())
@@ -127,12 +143,12 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? 
-  access_token      String? 
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? 
+  id_token          String?
   session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)

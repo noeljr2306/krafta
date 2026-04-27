@@ -1,185 +1,156 @@
 "use client";
 
-import { useState, FormEvent, useEffect, Suspense } from "react";
+import { useState, FormEvent, Suspense, useEffect } from "react";
 import { signIn } from "next-auth/react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Loader2, Mail, Lock, ShieldAlert, KeyRound } from "lucide-react";
+import { Loader2, Mail, Lock, AlertCircle, CheckCircle2 } from "lucide-react";
 
 export function AuthLoginForm() {
   return (
-    <Suspense
-      fallback={<div className="text-slate-500 text-center">Loading...</div>}
-    >
+    <Suspense fallback={<div className="text-slate-500 text-center py-10">Loading...</div>}>
       <LoginFormContent />
     </Suspense>
   );
 }
 
 function LoginFormContent() {
-  const params = useSearchParams();
-  const callbackUrl = params.get("callbackUrl") ?? "/";
-  const registered = params.get("registered") === "true";
-
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [adminCode, setAdminCode] = useState(""); // New state for secret code
-  const [isAdminMode, setIsAdminMode] = useState(false); // Toggle state
-
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [justRegistered, setJustRegistered] = useState(false);
 
-  const successMessage = registered
-    ? "Account created successfully! Please sign in."
-    : null;
+  useEffect(() => {
+    if (searchParams.get("registered") === "true") setJustRegistered(true);
+    const authError = searchParams.get("error");
+    if (authError === "CredentialsSignin") {
+      setError("Incorrect email or password. Please check your details and try again.");
+    } else if (authError) {
+      setError("An error occurred. Please try again.");
+    }
+  }, [searchParams]);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
+
+    if (!email || !password) {
+      setError("Please enter your email and password.");
+      return;
+    }
+
     setLoading(true);
 
-    // If Admin Mode is on, we use the adminCode as the password
-    const res = await signIn("credentials", {
-      redirect: true,
+    const result = await signIn("credentials", {
       email,
-      password: isAdminMode ? adminCode : password,
-      callbackUrl: isAdminMode ? "/admin" : callbackUrl, // Redirect admins to dashboard
+      password,
+      redirect: false,
     });
 
-    if (res?.error) {
-      setError(
-        isAdminMode
-          ? "Invalid Admin Credentials."
-          : "Invalid email or password.",
-      );
+    if (result?.error) {
+      setError("Incorrect email or password. Please check your details and try again.");
       setLoading(false);
+      return;
+    }
+
+    if (result?.ok) {
+      const sessionRes = await fetch("/api/auth/session");
+      const session = await sessionRes.json();
+      const role = session?.user?.role;
+
+      if (role === "ADMIN") router.push("/admin");
+      else if (role === "PROFESSIONAL") router.push("/professional");
+      else router.push("/customer");
+
+      router.refresh();
     }
   }
 
   return (
-    <div className="w-full max-w-md mx-auto p-8 bg-white rounded-[2rem] shadow-xl shadow-slate-200/60 border border-slate-100">
+    <div className="w-full max-w-md mx-auto p-8 bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/60 border border-slate-100">
       <form onSubmit={onSubmit} className="space-y-6">
         <div className="space-y-2 text-center">
-          <h1 className="text-3xl font-black tracking-tight text-slate-900">
-            {isAdminMode ? "Admin Access" : "Welcome Back"}
-          </h1>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Welcome back</h1>
           <p className="text-sm text-slate-500">
-            {isAdminMode
-              ? "Enter your secure master code"
-              : "Sign in to manage your KRAFTA bookings"}
+            Sign in to your <span className="text-sky-500 font-semibold">KRAFTA</span> account
           </p>
         </div>
-        {successMessage && (
-          <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-100 text-[11px] font-bold text-emerald-600 flex items-center gap-2">
-            <ShieldAlert className="h-4 w-4 text-emerald-500" />
-            {successMessage}
+
+        {justRegistered && (
+          <div className="flex items-center gap-2 p-3 rounded-xl bg-emerald-50 border border-emerald-100">
+            <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+            <p className="text-xs font-medium text-emerald-700">
+              Account created! Sign in to get started.
+            </p>
+          </div>
+        )}
+
+        {error && (
+          <div className="flex items-start gap-2 p-3 rounded-xl bg-rose-50 border border-rose-100 animate-in fade-in slide-in-from-top-1">
+            <AlertCircle className="h-4 w-4 text-rose-500 shrink-0 mt-0.5" />
+            <p className="text-xs font-medium text-rose-600">{error}</p>
           </div>
         )}
 
         <div className="space-y-4">
-          {/* Email Input */}
-          <div className="space-y-2">
-            <label className="text-sm font-bold text-slate-700 ml-1">
-              Email Address
-            </label>
+          <div className="space-y-1.5">
+            <label className="text-sm font-semibold text-slate-700 ml-1">Email address</label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <input
-                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-10 pr-4 py-3 text-sm text-slate-900 outline-none transition-all focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10"
+                className={`w-full rounded-xl border bg-slate-50/50 pl-10 pr-4 py-3 text-sm outline-none transition-all focus:bg-white focus:ring-4 ${
+                  error
+                    ? "border-rose-300 focus:border-rose-400 focus:ring-rose-500/10"
+                    : "border-slate-200 focus:border-sky-500 focus:ring-sky-500/10"
+                }`}
                 type="email"
                 required
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@krafta.com"
+                onChange={(e) => { setEmail(e.target.value); setError(null); }}
+                placeholder="you@example.com"
+                autoComplete="email"
               />
             </div>
           </div>
 
-          {/* Conditional Input: Password or Admin Code */}
-          {!isAdminMode ? (
-            <div className="space-y-2 animate-in fade-in slide-in-from-right-2">
-              <label className="text-sm font-bold text-slate-700 ml-1">
-                Password
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                <input
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-10 pr-4 py-3 text-sm text-slate-900 outline-none transition-all focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10"
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                />
-              </div>
+          <div className="space-y-1.5">
+            <label className="text-sm font-semibold text-slate-700 ml-1">Password</label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <input
+                className={`w-full rounded-xl border bg-slate-50/50 pl-10 pr-4 py-3 text-sm outline-none transition-all focus:bg-white focus:ring-4 ${
+                  error
+                    ? "border-rose-300 focus:border-rose-400 focus:ring-rose-500/10"
+                    : "border-slate-200 focus:border-sky-500 focus:ring-sky-500/10"
+                }`}
+                type="password"
+                required
+                value={password}
+                onChange={(e) => { setPassword(e.target.value); setError(null); }}
+                placeholder="••••••••"
+                autoComplete="current-password"
+              />
             </div>
-          ) : (
-            <div className="space-y-2 animate-in fade-in slide-in-from-left-2">
-              <label className="text-sm font-bold text-rose-600 ml-1">
-                Secret Admin Code
-              </label>
-              <div className="relative">
-                <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-rose-500" />
-                <input
-                  className="w-full rounded-xl border-2 border-rose-100 bg-rose-50/30 pl-10 pr-4 py-3 text-sm text-slate-900 outline-none transition-all focus:border-rose-500 focus:bg-white"
-                  type="password"
-                  required
-                  autoFocus
-                  value={adminCode}
-                  onChange={(e) => setAdminCode(e.target.value)}
-                  placeholder="Enter Code"
-                />
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Feedback Messages */}
-        {error && (
-          <div className="p-3 rounded-xl bg-rose-50 border border-rose-100 text-[11px] font-bold text-rose-600 flex items-center gap-2">
-            <ShieldAlert className="h-4 w-4" />
-            {error}
           </div>
-        )}
+        </div>
 
         <button
           type="submit"
           disabled={loading}
-          className={`relative flex w-full items-center justify-center rounded-xl px-4 py-3.5 text-sm font-black text-white shadow-lg transition-all active:scale-[0.98] disabled:opacity-70 ${
-            isAdminMode
-              ? "bg-slate-900 shadow-slate-200 hover:bg-slate-800"
-              : "bg-sky-500 shadow-sky-500/30 hover:bg-sky-400"
-          }`}
+          className="flex w-full items-center justify-center rounded-xl bg-sky-500 px-4 py-4 text-sm font-bold text-white shadow-lg shadow-sky-500/30 transition-all hover:bg-sky-400 hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
         >
-          {loading ? (
-            <Loader2 className="h-5 w-5 animate-spin" />
-          ) : isAdminMode ? (
-            "Authorized Login"
-          ) : (
-            "Sign In to KRAFTA"
-          )}
+          {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Sign In"}
         </button>
 
-        <div className="flex flex-col items-center gap-4">
-          <p className="text-center text-sm text-slate-500">
-            New to KRAFTA?{" "}
-            <Link
-              href="/auth/signup"
-              className="font-bold text-sky-600 hover:text-sky-500"
-            >
-              Create an account
-            </Link>
-          </p>
-
-          {/* THE SECRET TRIGGER */}
-          <button
-            type="button"
-            onClick={() => setIsAdminMode(!isAdminMode)}
-            className="text-[10px] font-bold uppercase tracking-widest text-slate-300 hover:text-slate-400 transition-colors"
-          >
-            {isAdminMode ? "Return to Customer Login" : "Staff Portal"}
-          </button>
-        </div>
+        <p className="text-center text-sm text-slate-500">
+          Don&apos;t have an account?{" "}
+          <Link href="/auth/signup" className="font-bold text-sky-600 hover:text-sky-500">
+            Create one free
+          </Link>
+        </p>
       </form>
     </div>
   );
