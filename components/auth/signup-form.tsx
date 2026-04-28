@@ -106,7 +106,7 @@ function SignupFormContent() {
       password,
       name,
       role,
-      role === Role.PROFESSIONAL ? idPreview : undefined,
+      role === Role.PROFESSIONAL ? (idPreview ?? undefined) : undefined,    
     );
 
     if (result.success) {
