@@ -12,7 +12,7 @@ export function VerifiedBadge({ size = "md" }: VerifiedBadgeProps) {
   };
 
   const containerClasses = {
-    sm: "gap-1 px-2 py-0.5 text-[10px]",
+    sm: "gap-1 px-2 py-0.5 text-[9.9px]",
     md: "gap-1.5 px-2.5 py-1 text-xs",
     lg: "gap-2 px-3 py-1.5 text-sm",
   };
