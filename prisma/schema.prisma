@@ -6,7 +6,8 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url      = env("krafta_DATABASE_URL")
+  directUrl = env("krafta_DATABASE_URL_UNPOOLED")
 }
 
 enum Role {
