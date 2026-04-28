@@ -1,5 +1,6 @@
 import { PrismaClient, Role, BookingStatus } from "@prisma/client";
 import { hashSync } from "bcryptjs";
+import 'dotenv/config'
 
 const prisma = new PrismaClient();
 
