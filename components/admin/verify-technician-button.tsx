@@ -18,7 +18,7 @@ export function VerifyTechnicianButton({
 
   async function handleToggle() {
     setLoading(true);
-    const result = await verifyTechnician(technicianId, !isVerified);
+    const result = await verifyTechnician(technicianId, !isVerified ? "approve" : "reject");
     if (result.success) {
       router.refresh();
     } else {
